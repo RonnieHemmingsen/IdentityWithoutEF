@@ -30,7 +30,7 @@ namespace IdentityWithoutEF.Data
                 cmd.Parameters.AddWithValue("@p4", user.NormalizedEmail ?? user.Email.ToUpper());
                 cmd.Parameters.AddWithValue("@p5", user.EmailConfirmed);
                 cmd.Parameters.AddWithValue("@p6", user.PasswordHash);
-                cmd.Parameters.AddWithValue("@p7", user.PhoneNumber ?? "60234490");
+                cmd.Parameters.AddWithValue("@p7", user.PhoneNumber ?? "0");
                 cmd.Parameters.AddWithValue("@p8", user.PhoneNumberConfirmed);
                 cmd.Parameters.AddWithValue("@p9", user.TwoFactorEnabled);
 
@@ -52,10 +52,36 @@ namespace IdentityWithoutEF.Data
 
         }
 
-        public Task<ApplicationUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        public async Task<ApplicationUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
-            // throw new System.NotImplementedException();
-            return null;
+            var user = new ApplicationUser();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync(cancellationToken);
+                var cmd = new SqlCommand("SELECT * FROM [ApplicationUser] where [Id] = @p1", connection);
+
+                cmd.Parameters.AddWithValue("@p1", userId);
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        user.Id = reader.GetInt32(0);
+                        user.UserName = reader.GetString(1);
+                        user.NormalizedUserName = reader.GetString(2);
+                        user.Email = reader.GetString(3);
+                        user.NormalizedEmail = reader.GetString(4);
+                        user.EmailConfirmed = reader.GetBoolean(5);
+                        user.PasswordHash = reader.GetString(6);
+                        user.PhoneNumber = reader.GetString(7);
+                        user.PhoneNumberConfirmed = reader.GetBoolean(8);
+                        user.TwoFactorEnabled = reader.GetBoolean(9);
+                    }
+                }
+
+            }
+            return user;
         }
 
         public async Task<ApplicationUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
@@ -69,12 +95,21 @@ namespace IdentityWithoutEF.Data
                 var cmd = new SqlCommand("SELECT * FROM [ApplicationUser] where [NormalizedUserName] = @p1", connection);
 
                 cmd.Parameters.AddWithValue("@p1", normalizedUserName);
-                var reader = cmd.ExecuteReader();
-                if (reader.HasRows)
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                     {
-                        System.Console.WriteLine(reader.GetString(0));
+                        cancellationToken.ThrowIfCancellationRequested();
+                        user.Id = reader.GetInt32(0);
+                        user.UserName = reader.GetString(1);
+                        user.NormalizedUserName = reader.GetString(2);
+                        user.Email = reader.GetString(3);
+                        user.NormalizedEmail = reader.GetString(4);
+                        user.EmailConfirmed = reader.GetBoolean(5);
+                        user.PasswordHash = reader.GetString(6);
+                        user.PhoneNumber = reader.GetString(7);
+                        user.PhoneNumberConfirmed = reader.GetBoolean(8);
+                        user.TwoFactorEnabled = reader.GetBoolean(9);
                     }
                 }
 
