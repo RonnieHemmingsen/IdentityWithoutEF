@@ -27,7 +27,7 @@ namespace IdentityWithoutEF.Controllers
         }
 
         [HttpPost]
-        public async Task<IdentityResult> Register([FromBody]RegisterViewModel model)
+        public async Task<string> Register([FromBody]RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -35,10 +35,11 @@ namespace IdentityWithoutEF.Controllers
                 var result = await _userMan.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    System.Console.WriteLine("fucking woot!!");
-                }
+                    var createdUser = await _userMan.FindByNameAsync(model.Email);
 
-                return result;
+                    System.Console.WriteLine("logged in");
+                    return AuthenticateUser(user);
+                }
             }
 
             return null;
@@ -52,7 +53,6 @@ namespace IdentityWithoutEF.Controllers
                 var result = await _signInMan.PasswordSignInAsync(model.Email, model.Password, false, false);
                 if (result.Succeeded)
                 {
-                    // var user = await _userMan.FindByEmailAsync(model.Email);
                     var user = await _userMan.FindByNameAsync(model.Email);
 
                     System.Console.WriteLine("logged in");
@@ -80,9 +80,7 @@ namespace IdentityWithoutEF.Controllers
                     new Claim(ClaimTypes.Name, user.UserName)
                 }),
                 Expires = DateTime.UtcNow.AddDays(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                Audience = "RHE",
-                Issuer = "RHE"
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
 
             };
 
